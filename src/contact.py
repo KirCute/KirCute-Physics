@@ -12,6 +12,7 @@ from pygame import Surface
 EdgeElasticity = 1.
 RotateElasticity = .5
 ignoreList = []
+checkEdgeSide = [True, True, True, True]
 
 
 def contactCheck(rbodyA: Rigidbody, rbodyB: Rigidbody):
@@ -93,16 +94,16 @@ def solveEdge(screen: Surface, rbody: Rigidbody):
 
 
 def solveEdgeCircle(screen: Surface, rbody: Rigidbody):
-    if rbody.position.y - rbody.shape.radius <= 0.:
+    if checkEdgeSide[0] and rbody.position.y - rbody.shape.radius <= 0.:
         rbody.position.y = rbody.shape.radius
         rbody.linearVelocity.y = -rbody.linearVelocity.y * EdgeElasticity
-    if rbody.position.y + rbody.shape.radius >= screen.get_height():
+    if checkEdgeSide[1] and rbody.position.y + rbody.shape.radius >= screen.get_height():
         rbody.position.y = screen.get_height() - rbody.shape.radius
         rbody.linearVelocity.y = -rbody.linearVelocity.y * EdgeElasticity
-    if rbody.position.x - rbody.shape.radius <= 0.:
+    if checkEdgeSide[2] and rbody.position.x - rbody.shape.radius <= 0.:
         rbody.position.x = rbody.shape.radius
         rbody.linearVelocity.x = -rbody.linearVelocity.x * EdgeElasticity
-    if rbody.position.x + rbody.shape.radius >= screen.get_width():
+    if checkEdgeSide[3] and rbody.position.x + rbody.shape.radius >= screen.get_width():
         rbody.position.x = screen.get_width() - rbody.shape.radius
         rbody.linearVelocity.x = -rbody.linearVelocity.x * EdgeElasticity
 
@@ -115,19 +116,19 @@ def solveEdgePolygon(screen: Surface, rbody: Rigidbody):
         return
     for p in rbody.shape.points:
         point = p.rotate(rbody.rotation) + rbody.position
-        if point.y < 0.:
+        if checkEdgeSide[0] and point.y < 0.:
             rbody.position.y = rbody.shape.radius
             rbody.linearVelocity.y = -rbody.linearVelocity.y * EdgeElasticity
             rbody.angularVelocity = -rbody.angularVelocity * RotateElasticity
-        if point.y > screen.get_height():
+        if checkEdgeSide[1] and point.y > screen.get_height():
             rbody.position.y = screen.get_height() - rbody.shape.radius
             rbody.linearVelocity.y = -rbody.linearVelocity.y * EdgeElasticity
             rbody.angularVelocity = -rbody.angularVelocity * RotateElasticity
-        if point.x < 0.:
+        if checkEdgeSide[2] and point.x < 0.:
             rbody.position.x = rbody.shape.radius
             rbody.linearVelocity.x = -rbody.linearVelocity.x * EdgeElasticity
             rbody.angularVelocity = -rbody.angularVelocity * RotateElasticity
-        if point.x > screen.get_width():
+        if checkEdgeSide[3] and point.x > screen.get_width():
             rbody.position.x = screen.get_width() - rbody.shape.radius
             rbody.linearVelocity.x = -rbody.linearVelocity.x * EdgeElasticity
             rbody.angularVelocity = -rbody.angularVelocity * RotateElasticity
@@ -144,13 +145,17 @@ def solve(rbodyA: Rigidbody, rbodyB: Rigidbody):
             solveCircleWithPolygon(rbodyB, rbodyA)
         elif type(rbodyB.shape) is Polygon:
             solvePolygonWithPolygon(rbodyA, rbodyB)
+    for trigger in rbodyA.triggers:
+        trigger(rbodyA, rbodyB)
+    for trigger in rbodyB.triggers:
+        trigger(rbodyB, rbodyA)
 
 
 def simpleImpact(rbodyA: Rigidbody, rbodyB: Rigidbody, direction: Vector):
     ovdirA, keepA = rbodyA.linearVelocity.decomposeVertical(direction)
     ovdirB, keepB = rbodyB.linearVelocity.decomposeVertical(direction)
-    vdirA = (ovdirA * (rbodyA.mass - rbodyA.mass) + ovdirB * 2. * rbodyB.mass) / (rbodyA.mass + rbodyB.mass)
-    vdirB = (ovdirB * (rbodyB.mass - rbodyB.mass) + ovdirA * 2. * rbodyA.mass) / (rbodyA.mass + rbodyB.mass)
+    vdirA = (ovdirA * (rbodyA.mass - rbodyB.mass) + ovdirB * 2. * rbodyB.mass) / (rbodyA.mass + rbodyB.mass)
+    vdirB = (ovdirB * (rbodyB.mass - rbodyA.mass) + ovdirA * 2. * rbodyA.mass) / (rbodyA.mass + rbodyB.mass)
     rbodyA.linearVelocity = keepA + vdirA * rbodyB.elasticity
     rbodyB.linearVelocity = keepB + vdirB * rbodyA.elasticity
 

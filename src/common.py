@@ -68,3 +68,6 @@ class Vector:
         cos = math.cos(angle)
         sin = math.sin(angle)
         return Vector(self.x * cos - self.y * sin, self.x * sin + self.y * cos)
+
+    def overturn(self):
+        return Vector(self.y, self.x)

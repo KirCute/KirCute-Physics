@@ -6,6 +6,7 @@ from pygame import Surface, draw
 
 MaxLayer = 3
 DivideCount = 5
+DrawEdge = False
 
 
 class Parent(metaclass=abc.ABCMeta):
@@ -66,6 +67,7 @@ class Root(Parent):
 
     def insert(self, rbody: Rigidbody):
         # 此处的rbody已经离开窗口，进行有关刚体删除的工作（其实等待gc就行）
+        rbody.destroyed = True
         return
 
     def append(self, rbody: Rigidbody):  # World调用用来添加刚体
@@ -130,7 +132,7 @@ class Node(metaclass=abc.ABCMeta):
     def check(self):
         remove = 0
         for i in range(len(self._storage)):
-            if not self.contains(self._storage[i - remove]):
+            if self._storage[i - remove].destroyed or not self.contains(self._storage[i - remove]):
                 self._parent.insert(self._storage[i - remove])
                 self._storage.remove(self._storage[i - remove])
                 remove += 1
@@ -149,7 +151,8 @@ class Branch(Node):
         return super().__len__() + len(self._lu) + len(self._ru) + len(self._ld) + len(self._rd)
 
     def insert(self, rbody: Rigidbody):
-        rbody.shape.color = (127, 127, 127)  # 染色
+        if DrawEdge:
+            rbody.shape.color = (127, 127, 127)  # 染色
         super().insert(rbody)
 
     def update(self, force: Vector):
@@ -165,10 +168,11 @@ class Branch(Node):
         self._ru.render(screen)
         self._ld.render(screen)
         self._rd.render(screen)
-        draw.line(screen, (0, 127, 0), ((self._start[0] + self._end[0]) / 2, self._start[1]),
-                  ((self._start[0] + self._end[0]) / 2, self._end[1]), MaxLayer - self._layer)  # 画出四叉树边界
-        draw.line(screen, (0, 127, 0), (self._start[0], (self._start[1] + self._end[1]) / 2),
-                  (self._end[0], (self._start[1] + self._end[1]) / 2), MaxLayer - self._layer)  # 画出四叉树边界
+        if DrawEdge:
+            draw.line(screen, (0, 127, 0), ((self._start[0] + self._end[0]) / 2, self._start[1]),
+                      ((self._start[0] + self._end[0]) / 2, self._end[1]), MaxLayer - self._layer)  # 画出四叉树边界
+            draw.line(screen, (0, 127, 0), (self._start[0], (self._start[1] + self._end[1]) / 2),
+                      (self._end[0], (self._start[1] + self._end[1]) / 2), MaxLayer - self._layer)  # 画出四叉树边界
 
     def collideCheck(self):
         self._lu.collideCheck()
@@ -181,22 +185,26 @@ class Branch(Node):
         remove = 0
         for i in range(len(self._storage)):
             if self._lu.contains(self._storage[i - remove]):
-                self._storage[i - remove].shape.color = (255, 127, 127)  # 染色
+                if DrawEdge:
+                    self._storage[i - remove].shape.color = (255, 127, 127)  # 染色
                 self._lu.insert(self._storage[i - remove])
                 self._storage.remove(self._storage[i - remove])
                 remove += 1
             elif self._ru.contains(self._storage[i - remove]):
-                self._storage[i - remove].shape.color = (127, 255, 127)  # 染色
+                if DrawEdge:
+                    self._storage[i - remove].shape.color = (127, 255, 127)  # 染色
                 self._ru.insert(self._storage[i - remove])
                 self._storage.remove(self._storage[i - remove])
                 remove += 1
             elif self._ld.contains(self._storage[i - remove]):
-                self._storage[i - remove].shape.color = (127, 127, 255)  # 染色
+                if DrawEdge:
+                    self._storage[i - remove].shape.color = (127, 127, 255)  # 染色
                 self._ld.insert(self._storage[i - remove])
                 self._storage.remove(self._storage[i - remove])
                 remove += 1
             elif self._rd.contains(self._storage[i - remove]):
-                self._storage[i - remove].shape.color = (255, 255, 127)  # 染色
+                if DrawEdge:
+                    self._storage[i - remove].shape.color = (255, 255, 127)  # 染色
                 self._rd.insert(self._storage[i - remove])
                 self._storage.remove(self._storage[i - remove])
                 remove += 1
