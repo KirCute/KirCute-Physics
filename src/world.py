@@ -22,7 +22,7 @@ class World:
                 contact.contactCheck(self.objs[i], self.objs[j])
             contact.solveEdge(self.objs[i], contact.meetEdge(screen, self.objs[i]))
         """
-        self.objs.update(screen, self.gravity)
+        self.objs.update((screen.get_width(), screen.get_height()), self.gravity)
 
     def render(self, screen: Surface):
         """

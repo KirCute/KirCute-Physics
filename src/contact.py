@@ -1,5 +1,4 @@
 from rigidbody import *
-from shape import *
 from pygame import Surface
 
 """
@@ -10,6 +9,7 @@ from pygame import Surface
 """
 
 EdgeElasticity = 1.
+RotateElasticity = .5
 ignoreList = []
 
 
@@ -69,7 +69,19 @@ def inContactCircleWithPolygon(circle: Rigidbody, polygon: Rigidbody) -> bool:
 
 
 def inContactPolygonWithPolygon(polygonA: Rigidbody, polygonB: Rigidbody) -> bool:
-    return False  # TODO
+    for axis in polygonA.shape.normals:
+        b2a = (polygonA.position - polygonB.position) % axis.rotate(polygonA.rotation)
+        leftA, rightA = getPolygonProjectionWithAxis(polygonA, axis)
+        leftB, rightB = getPolygonProjectionWithAxis(polygonB, axis)
+        if not ((leftA < leftB + b2a < rightA) or (leftA < rightB + b2a < rightA)):
+            return False
+    for axis in polygonB.shape.normals:
+        b2a = (polygonA.position - polygonB.position) % axis.rotate(polygonB.rotation)
+        leftA, rightA = getPolygonProjectionWithAxis(polygonA, axis)
+        leftB, rightB = getPolygonProjectionWithAxis(polygonB, axis)
+        if not ((leftA < leftB + b2a < rightA) or (leftA < rightB + b2a < rightA)):
+            return False
+    return True
 
 
 def solveEdge(screen: Surface, rbody: Rigidbody):
@@ -96,11 +108,11 @@ def solveEdgePolygon(screen: Surface, rbody: Rigidbody):
         point = p.rotate(rbody.rotation) + rbody.position
         if point.y < 0. or point.y > screen.get_height():
             rbody.linearVelocity.y = -rbody.linearVelocity.y * EdgeElasticity
-            rbody.angularVelocity = -rbody.angularVelocity
+            rbody.angularVelocity = -rbody.angularVelocity * RotateElasticity
             break
         elif point.x < 0. or point.x > screen.get_width():
             rbody.linearVelocity.x = -rbody.linearVelocity.x * EdgeElasticity
-            rbody.angularVelocity = -rbody.angularVelocity
+            rbody.angularVelocity = -rbody.angularVelocity * RotateElasticity
             break
 
 
@@ -117,30 +129,59 @@ def solve(rbodyA: Rigidbody, rbodyB: Rigidbody):
             solvePolygonWithPolygon(rbodyA, rbodyB)
 
 
+def simpleImpact(rbodyA: Rigidbody, rbodyB: Rigidbody, direction: Vector):
+    ovdirA, keepA = rbodyA.linearVelocity.decomposeVertical(direction)
+    ovdirB, keepB = rbodyB.linearVelocity.decomposeVertical(direction)
+    vdirA = (ovdirA * (rbodyA.mass - rbodyA.mass) + ovdirB * 2. * rbodyB.mass) / (rbodyA.mass + rbodyB.mass)
+    vdirB = (ovdirB * (rbodyB.mass - rbodyB.mass) + ovdirA * 2. * rbodyA.mass) / (rbodyA.mass + rbodyB.mass)
+    rbodyA.linearVelocity = keepA + vdirA * rbodyB.elasticity
+    rbodyB.linearVelocity = keepB + vdirB * rbodyA.elasticity
+
+
 def solveCircleWithCircle(circleA: Rigidbody, circleB: Rigidbody):
     direction = circleA.position - circleB.position
     if direction.magnitudeSqr() == 0.:
         return
-    ovdirA, keepA = circleA.linearVelocity.decomposeVertical(direction)
-    ovdirB, keepB = circleB.linearVelocity.decomposeVertical(direction)
-    vdirA = (ovdirA * (circleA.mass - circleB.mass) + ovdirB * 2. * circleB.mass) / (circleA.mass + circleB.mass)
-    vdirB = (ovdirB * (circleB.mass - circleA.mass) + ovdirA * 2. * circleA.mass) / (circleA.mass + circleB.mass)
-    circleA.linearVelocity = keepA + vdirA * circleB.elasticity
-    circleB.linearVelocity = keepB + vdirB * circleA.elasticity
+    simpleImpact(circleA, circleB, direction)
     ignoreList.append((circleA, circleB))
 
 
+def getEdgeImpactDirection(rbody: Rigidbody, polygon: Rigidbody) -> (Vector, float):
+    originDirection = polygon.position - rbody.position
+    minAngle = 0.
+    minEdge = None
+    for normal in polygon.shape.normals:
+        angle = originDirection.included(normal)
+        if minAngle > angle:
+            minAngle = angle
+            minEdge = normal
+    return minEdge, minAngle
+
+
 def solveCircleWithPolygon(circle: Rigidbody, polygon: Rigidbody):
-    minSqr = circle.shape.radius ** 2
-    closestPoint = None
-    for p in polygon.points:
-        point = p.rotate(polygon.rotation) + polygon.position
-        distance = (point - circle.position).magnitudeSqr()
-        if distance < minSqr:
-            minSqr = distance
-            closestPoint = point
-    # TODO
+    direction, angle = getEdgeImpactDirection(circle, polygon)
+    polygon.angularVelocity += angle * circle.mass / polygon.mass
+    polygon.angularVelocity *= RotateElasticity
+    simpleImpact(circle, polygon, direction)
+    ignoreList.append((circle, polygon))
 
 
 def solvePolygonWithPolygon(polygonA: Rigidbody, polygonB: Rigidbody):
-    return  # TODO
+    directionB, angleB = getEdgeImpactDirection(polygonA, polygonB)
+    directionA, angleA = getEdgeImpactDirection(polygonB, polygonA)
+    polygonA.angularVelocity += angleA * polygonB.mass / polygonA.mass
+    polygonA.angularVelocity *= RotateElasticity
+    polygonB.angularVelocity += angleB * polygonA.mass / polygonB.mass
+    polygonB.angularVelocity *= RotateElasticity
+    simpleImpact(polygonA, polygonB, directionA - directionB)
+    ignoreList.append((polygonA, polygonB))
+
+
+def getPolygonProjectionWithAxis(polygon: Rigidbody, axis: Vector) -> (float, float):
+    minD = 0.
+    maxD = 0.
+    for point in polygon.shape.points:
+        num = point.rotate(polygon.rotation) % axis.rotate(polygon.rotation)
+        minD = min(minD, num)
+        maxD = max(maxD, num)
+    return minD, maxD

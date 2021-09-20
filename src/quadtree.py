@@ -1,5 +1,5 @@
 import abc
-import contact
+# import contact
 from common import *
 from rigidbody import Rigidbody
 from pygame import Surface, draw
@@ -49,7 +49,7 @@ class NodeProxy(Parent):
     def collide(self, rbody: Rigidbody):
         self._node.collide(rbody)
 
-    def solveEdge(self, screen: Surface):
+    def solveEdge(self, screen: tuple):
         self._node.solveEdge(screen)
 
 
@@ -71,7 +71,7 @@ class Root(Parent):
     def append(self, rbody: Rigidbody):  # World调用用来添加刚体
         self._root.insert(rbody)
 
-    def update(self, screen: Surface, force: Vector):
+    def update(self, screen: tuple, force: Vector):
         self._root.update(force)
         self._root.check()
         self._root.collideCheck()
@@ -105,22 +105,22 @@ class Node(metaclass=abc.ABCMeta):
     def collideCheck(self):
         for i in range(len(self._storage)):
             for j in range(i + 1, len(self._storage)):
-                contact.contactCheck(self._storage[i], self._storage[j])
+                self._storage[i].collideCheck(self._storage[j])
         for obj in self._storage:
             self._parent.collide(obj)
 
-    def collide(self, rbody):
+    def collide(self, rbody: Rigidbody):
         for obj in self._storage:
-            contact.contactCheck(obj, rbody)
+            rbody.collideCheck(obj)
         self._parent.collide(rbody)
 
-    def solveEdge(self, screen: Surface):
+    def solveEdge(self, screen: tuple):
         for obj in self._storage:
-            contact.solveEdge(screen, obj)
+            obj.checkEdge(screen)
 
     def update(self, force: Vector):
         for rbody in self._storage:
-            rbody.force += force * rbody.mass
+            rbody.force += force / rbody.invMass
             rbody.update()
 
     def render(self, screen: Surface):
@@ -206,7 +206,7 @@ class Branch(Node):
         self._rd.check()
         super().check()
 
-    def solveEdge(self, screen: Surface):
+    def solveEdge(self, screen: tuple):
         super().solveEdge(screen)
         self._lu.solveEdge(screen)
         self._ru.solveEdge(screen)
