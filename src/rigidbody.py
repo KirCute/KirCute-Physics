@@ -37,5 +37,7 @@ class StaticRigidbody(Rigidbody):
         self.rotStable = rotation
 
     def update(self):
+        self.linearVelocity = Vector(0., 0.)
+        self.angularVelocity = 0.
         self.position = self.posStable
         self.rotation = self.rotStable

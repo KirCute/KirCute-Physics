@@ -1,6 +1,5 @@
 import abc
 import contact
-from common import *
 from rigidbody import Rigidbody
 from pygame import Surface, draw
 
@@ -35,7 +34,7 @@ class NodeProxy(Parent):
     def contains(self, rbody: Rigidbody) -> bool:
         return self._node.contains(rbody)
 
-    def update(self, force: Vector):
+    def update(self, force: list):
         self._node.update(force)
 
     def render(self, screen: Surface):
@@ -50,11 +49,11 @@ class NodeProxy(Parent):
     def collide(self, rbody: Rigidbody):
         self._node.collide(rbody)
 
-    def solveEdge(self, screen: Surface):
+    def solveEdge(self, screen: tuple):
         self._node.solveEdge(screen)
 
 
-class Root(Parent):
+class Entrance(Parent):
     def __init__(self, edgeWidth: int, windowRect: tuple):
         self._root = NodeProxy(self, 0, (-edgeWidth, -edgeWidth),
                                (windowRect[0] + edgeWidth, windowRect[1] + edgeWidth))
@@ -73,7 +72,7 @@ class Root(Parent):
     def append(self, rbody: Rigidbody):  # World调用用来添加刚体
         self._root.insert(rbody)
 
-    def update(self, screen: Surface, force: Vector):
+    def update(self, screen: tuple, force: list):
         self._root.update(force)
         self._root.check()
         self._root.collideCheck()
@@ -116,13 +115,14 @@ class Node(metaclass=abc.ABCMeta):
             contact.contactCheck(obj, rbody)
         self._parent.collide(rbody)
 
-    def solveEdge(self, screen: Surface):
+    def solveEdge(self, screen: tuple):
         for obj in self._storage:
             contact.solveEdge(screen, obj)
 
-    def update(self, force: Vector):
+    def update(self, force: list):
         for rbody in self._storage:
-            rbody.force += force * rbody.mass
+            for f in force:
+                rbody.force += f(rbody)
             rbody.update()
 
     def render(self, screen: Surface):
@@ -155,7 +155,7 @@ class Branch(Node):
             rbody.shape.color = (127, 127, 127)  # 染色
         super().insert(rbody)
 
-    def update(self, force: Vector):
+    def update(self, force: list):
         super().update(force)
         self._lu.update(force)
         self._ru.update(force)
@@ -214,7 +214,7 @@ class Branch(Node):
         self._rd.check()
         super().check()
 
-    def solveEdge(self, screen: Surface):
+    def solveEdge(self, screen: tuple):
         super().solveEdge(screen)
         self._lu.solveEdge(screen)
         self._ru.solveEdge(screen)

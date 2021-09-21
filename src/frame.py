@@ -16,9 +16,6 @@ class GameFrame(metaclass=abc.ABCMeta):
         self.__clock = pygame.time.Clock()
         self.__lastUpdate = time.time()
 
-    def __del__(self):
-        pygame.quit()
-
     def _init(self):
         pass
 
@@ -33,14 +30,16 @@ class GameFrame(metaclass=abc.ABCMeta):
             return
         self.__lastUpdate = time.time()
         self.__clock.tick()
-        self._screen.fill(self._background)
         events = pygame.event.get()
         for event in events:
             if event.type == pygame.QUIT:
                 self._exit()
+                pygame.quit()
                 sys.exit()
+        self._screen.fill(self._background)
         self._update(events)
-        self._world.update(self._screen)
+        del events
+        self._world.update((self._screen.get_width(), self._screen.get_height()))
         self._world.render(self._screen)
         pygame.display.update()
 
@@ -49,9 +48,6 @@ class GameFrame(metaclass=abc.ABCMeta):
 
     def getFPS(self) -> int:
         return math.floor(self.__clock.get_fps())
-
-    def setGravity(self, gravity: float):
-        self._world.gravity.y = gravity * self.__fpsTime
 
     def start(self):
         self._init()

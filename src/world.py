@@ -1,19 +1,18 @@
 from pygame import Surface
 from rigidbody import Rigidbody
-from quadtree import Root
-from common import *
+from quadtree import Entrance
 
 
 class World:
     def __init__(self, edgeWidth: int, windowRect: tuple):
         # self.objs = []
-        self.objs = Root(edgeWidth, windowRect)
-        self.gravity = Vector(0., 0.)
+        self.objs = Entrance(edgeWidth, windowRect)
+        self.forceField = []
 
     def register(self, rbody: Rigidbody):
         self.objs.append(rbody)
 
-    def update(self, screen: Surface):
+    def update(self, screen: tuple):
         """
         for obj in self.objs:
             obj.update()
@@ -22,7 +21,7 @@ class World:
                 contact.contactCheck(self.objs[i], self.objs[j])
             contact.solveEdge(self.objs[i], contact.meetEdge(screen, self.objs[i]))
         """
-        self.objs.update(screen, self.gravity)
+        self.objs.update(screen, self.forceField)
 
     def render(self, screen: Surface):
         """
