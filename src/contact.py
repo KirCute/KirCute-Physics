@@ -1,5 +1,6 @@
 from rigidbody import *
 from shape import *
+import time
 
 """
 注意：以下代码十分瞎眼
@@ -12,6 +13,8 @@ EdgeElasticity = 1.
 RotateElasticity = .5
 ignoreList = []
 checkEdgeSide = [True, True, True, True]
+
+DebugCircleWithPolygon = False
 
 
 def contactCheck(rbodyA: Rigidbody, rbodyB: Rigidbody):
@@ -66,7 +69,7 @@ def inContactCircleWithPolygon(circle: Rigidbody, polygon: Rigidbody) -> bool:
     for i in range(1, len(polygon.shape.pointsR)):
         maxL = max(maxL, (polygon.shape.pointsR[i].rotate(polygon.rotation) + polygon.position - circle.position) %
                    polygon.shape.normals[i - 1].rotate(polygon.rotation))
-    return maxL <= circle.shape.radius + polygon.shape.radius
+    return maxL <= circle.shape.radius * 3. + polygon.shape.radius
 
 
 def inContactPolygonWithPolygon(polygonA: Rigidbody, polygonB: Rigidbody) -> bool:
@@ -189,6 +192,9 @@ def getEdgeImpactDirection(rbody: Rigidbody, polygon: Rigidbody) -> (Vector, flo
 
 
 def solveCircleWithPolygon(circle: Rigidbody, polygon: Rigidbody):
+    if DebugCircleWithPolygon:
+        print(time.time())
+        return
     direction, angle = getEdgeImpactDirection(circle, polygon)
     polygon.angularVelocity += angle * circle.mass / polygon.mass
     polygon.angularVelocity *= RotateElasticity

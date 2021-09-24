@@ -15,7 +15,7 @@ class VortexDemo(GameFrame):
         self._world.forceField.append(lambda rbody: Vector(1., 0.) if rbody.position.x < 400 and rbody.position.y > 300 else Vector(0., 0.))
         self._world.forceField.append(lambda rbody: Vector(0., -1.) if rbody.position.x > 400 and rbody.position.y > 300 else Vector(0., 0.))
         self._world.forceField.append(lambda rbody: Vector(-1., 0.) if rbody.position.x > 400 and rbody.position.y < 300 else Vector(0., 0.))
-        self._world.forceField.append(lambda rbody: rbody.linearVelocity.opposite() * .1 if rbody.linearVelocity.magnitudeSqr() > 100. else Vector(0., 0.))
+        self._world.forceField.append(lambda rbody: rbody.linearVelocity.opposite() * .1 if rbody.linearVelocity.magnitudeSqr() > 250. else Vector(0., 0.))
 
     def _update(self, events: list):
         pygame.display.set_caption("KirCute-Physics Demo fps: %s, len: %s" % (self.getFPS(), len(self._world.objs)))

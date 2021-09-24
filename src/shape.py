@@ -27,7 +27,7 @@ class Polygon(Shape):
         return Polygon(math.sqrt(radiusSqr), points, color)
 
     def __init__(self, radius: float, points: list, color: tuple = (127, 127, 127)):
-        super().__init__(radius * math.sqrt(2), color)
+        super().__init__(radius, color)
         self.pointsR = []
         for p in points:
             self.pointsR.append(p.overturn())
