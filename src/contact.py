@@ -11,30 +11,14 @@ import time
 
 EdgeElasticity = 1.
 RotateElasticity = .5
-ignoreList = []
 checkEdgeSide = [True, True, True, True]
 
 DebugCircleWithPolygon = False
 
 
 def contactCheck(rbodyA: Rigidbody, rbodyB: Rigidbody):
-    if isIgnored(rbodyA, rbodyB):
-        if not inContact(rbodyA, rbodyB):
-            recheck(rbodyA, rbodyB)
-    else:
-        if inContact(rbodyA, rbodyB):
-            solve(rbodyA, rbodyB)
-
-
-def isIgnored(rbodyA: Rigidbody, rbodyB: Rigidbody) -> bool:
-    return (rbodyA, rbodyB) in ignoreList or (rbodyB, rbodyA) in ignoreList
-
-
-def recheck(rbodyA: Rigidbody, rbodyB: Rigidbody):
-    if (rbodyA, rbodyB) in ignoreList:
-        ignoreList.remove((rbodyA, rbodyB))
-    if (rbodyB, rbodyA) in ignoreList:
-        ignoreList.remove((rbodyB, rbodyA))
+    if inContact(rbodyA, rbodyB):
+        solve(rbodyA, rbodyB)
 
 
 def inContact(rbodyA: Rigidbody, rbodyB: Rigidbody) -> bool:
@@ -164,7 +148,7 @@ def simpleImpact(rbodyA: Rigidbody, rbodyB: Rigidbody, direction: Vector):
 
 def moveAway(rbodyA: Rigidbody, rbodyB: Rigidbody):
     direction = rbodyA.position - rbodyB.position
-    magnitude = (rbodyA.shape.radius + rbodyB.shape.radius - direction.magnitude()) / 4.
+    magnitude = (rbodyA.shape.radius + rbodyB.shape.radius - direction.magnitude()) / 4. + .01
     normalize = direction.normalize() * magnitude
     rbodyA.position += normalize
     rbodyB.position -= normalize
@@ -176,7 +160,6 @@ def solveCircleWithCircle(circleA: Rigidbody, circleB: Rigidbody):
         return
     simpleImpact(circleA, circleB, direction)
     moveAway(circleA, circleB)
-    ignoreList.append((circleA, circleB))
 
 
 def getEdgeImpactDirection(rbody: Rigidbody, polygon: Rigidbody) -> (Vector, float):
@@ -200,7 +183,6 @@ def solveCircleWithPolygon(circle: Rigidbody, polygon: Rigidbody):
     polygon.angularVelocity *= RotateElasticity
     simpleImpact(circle, polygon, direction)
     moveAway(circle, polygon)
-    ignoreList.append((circle, polygon))
 
 
 def solvePolygonWithPolygon(polygonA: Rigidbody, polygonB: Rigidbody):
@@ -212,7 +194,6 @@ def solvePolygonWithPolygon(polygonA: Rigidbody, polygonB: Rigidbody):
     polygonB.angularVelocity *= RotateElasticity
     simpleImpact(polygonA, polygonB, directionA - directionB)
     moveAway(polygonA, polygonB)
-    ignoreList.append((polygonA, polygonB))
 
 
 def getPolygonProjectionWithAxis(polygon: Rigidbody, axis: Vector) -> (float, float):
