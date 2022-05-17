@@ -4,28 +4,29 @@ import abc
 import math
 import pygame
 from world import World
+from typing import Tuple, List
 
 
 class GameFrame(metaclass=abc.ABCMeta):
-    def __init__(self, frameSize: tuple = (800, 600), fps: float = 60.0, edgeWidth: int = 50):
+    def __init__(self, frameSize: Tuple[int, int] = (800, 600), fps: float = 60.0, edgeWidth: int = 50):
         pygame.init()
-        self._screen = pygame.display.set_mode(frameSize)
-        self.__fpsTime = 1.0 / fps
-        self._background = (255, 255, 255)
-        self._world = World(edgeWidth, frameSize)
-        self.__clock = pygame.time.Clock()
-        self.__lastUpdate = time.time()
+        self._screen: pygame.Surface = pygame.display.set_mode(frameSize)
+        self.__fpsTime: float = 1.0 / fps
+        self._background: Tuple[int, int, int] = (255, 255, 255)
+        self._world: World = World(edgeWidth, frameSize)
+        self.__clock: pygame.time.Clock = pygame.time.Clock()
+        self.__lastUpdate: float = time.time()
 
-    def _init(self):
+    def _init(self) -> None:
         pass
 
-    def _exit(self):
+    def _exit(self) -> None:
         pass
 
-    def _update(self, events: list):
+    def _update(self, events: List[pygame.event.Event]) -> None:
         pass
 
-    def __update(self):
+    def __update(self) -> None:
         if time.time() - self.__lastUpdate < self.__fpsTime:
             return
         self.__lastUpdate = time.time()
@@ -43,13 +44,13 @@ class GameFrame(metaclass=abc.ABCMeta):
         self._world.render(self._screen)
         pygame.display.update()
 
-    def setFPS(self, fps: float):
+    def setFPS(self, fps: float) -> None:
         self.__fpsTime = 1.0 / fps
 
     def getFPS(self) -> int:
         return math.floor(self.__clock.get_fps())
 
-    def start(self):
+    def start(self) -> None:
         self._init()
         self.__lastUpdate = time.time()
         while True:

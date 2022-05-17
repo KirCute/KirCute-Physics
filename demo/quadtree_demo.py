@@ -6,11 +6,11 @@ from frame import GameFrame
 
 
 class QuadtreeDemo(GameFrame):
-    def _init(self):
+    def _init(self) -> None:
         quadtree.DrawEdge = True
         self._world.forceField.append(lambda rbody: Vector(0., 10. * rbody.mass / self.getFPS()))
 
-    def _update(self, events: list):
+    def _update(self, events: List[pygame.event.Event]) -> None:
         pygame.display.set_caption("KirCute-Physics Demo fps: %s, len: %s" % (self.getFPS(), len(self._world.objs)))
         for event in events:
             if event.type == pygame.MOUSEBUTTONDOWN:

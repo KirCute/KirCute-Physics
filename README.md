@@ -206,13 +206,13 @@ s_w + s_a = r_A + r_B - |AC|
 $$
 ​        将两刚体的速度u，v沿圆心连线方向分解，垂直分量记为b，e，共线分量记为m，n，对m，n进行完全弹性碰撞处理得到碰撞后速度分量p，q，有：
 $$
-m_Av_m + m_Cv_n = m_Av_p + m_Cv_q~\\
-\frac{1}{2}m_Av_m^2+\frac{1}{2}m_Cv_n^2=\frac{1}{2}m_Av_p^2+\frac{1}{2}m_Cv_q^2
+m_Av_m + m_Cv_n = m_Av_w + m_Cv_a~\\
+\frac{1}{2}m_Av_m^2+\frac{1}{2}m_Cv_n^2=\frac{1}{2}m_Av_w^2+\frac{1}{2}m_Cv_a^2
 $$
 整理得：
 $$
-v_p=\frac{(m_A-m_C)v_m+2m_Cv_n}{m_A+m_C}\\~
-v_q=\frac{(m_C-m_A)v_n+2m_Av_m}{m_A+m_C}
+v_w=\frac{(m_A-m_C)v_m+2m_Cv_n}{m_A+m_C}\\~
+v_a=\frac{(m_C-m_A)v_n+2m_Av_m}{m_A+m_C}
 $$
 ​        将结果p，q与另一刚体的`elasticity`成员相乘后，再与垂直分量b，e相加，得到A，C的最终速度。**另外，边缘碰撞视为刚体与质量为无穷的物品的碰撞，此时刚体与边缘垂直方向的速度分量刚好反向。**
 

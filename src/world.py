@@ -1,31 +1,20 @@
 from pygame import Surface
+from common import Vector
 from rigidbody import Rigidbody
 from quadtree import Entrance
+from typing import Tuple, List, Callable
 
 
 class World:
-    def __init__(self, edgeWidth: int, windowRect: tuple):
-        # self.objs = []
-        self.objs = Entrance(edgeWidth, windowRect)
-        self.forceField = []
+    def __init__(self, edgeWidth: int, windowRect: Tuple[float, float]):
+        self.objs: Entrance = Entrance(edgeWidth, windowRect)
+        self.forceField: List[Callable[[Rigidbody], Vector]] = []
 
-    def register(self, rbody: Rigidbody):
+    def register(self, rbody: Rigidbody) -> None:
         self.objs.append(rbody)
 
-    def update(self, screen: tuple):
-        """
-        for obj in self.objs:
-            obj.update()
-        for i in range(len(self.objs)):
-            for j in range(i + 1, len(self.objs)):
-                contact.contactCheck(self.objs[i], self.objs[j])
-            contact.solveEdge(self.objs[i], contact.meetEdge(screen, self.objs[i]))
-        """
+    def update(self, screen: Tuple[float, float]) -> None:
         self.objs.update(screen, self.forceField)
 
-    def render(self, screen: Surface):
-        """
-        for obj in self.objs:
-            obj.render(screen)
-        """
+    def render(self, screen: Surface) -> None:
         self.objs.render(screen)

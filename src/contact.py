@@ -1,13 +1,7 @@
 from rigidbody import *
 from shape import *
+from typing import Tuple
 import time
-
-"""
-注意：以下代码十分瞎眼
-本来是因为发生碰撞的两个物体种类不同所以把处理碰撞单独放在这里
-后来边界判定等可以OOP的代码也放在这里导致这个文件看起来十分不OOP
-但我懒得重构了
-"""
 
 EdgeElasticity = 1.
 RotateElasticity = .5
@@ -16,7 +10,7 @@ checkEdgeSide = [True, True, True, True]
 DebugCircleWithPolygon = False
 
 
-def contactCheck(rbodyA: Rigidbody, rbodyB: Rigidbody):
+def contactCheck(rbodyA: Rigidbody, rbodyB: Rigidbody) -> None:
     if inContact(rbodyA, rbodyB):
         solve(rbodyA, rbodyB)
 
@@ -57,29 +51,24 @@ def inContactCircleWithPolygon(circle: Rigidbody, polygon: Rigidbody) -> bool:
 
 
 def inContactPolygonWithPolygon(polygonA: Rigidbody, polygonB: Rigidbody) -> bool:
-    for axis in polygonA.shape.normals:
-        b2a = (polygonA.position - polygonB.position) % axis.rotate(polygonA.rotation)
-        leftA, rightA = getPolygonProjectionWithAxis(polygonA, axis)
-        leftB, rightB = getPolygonProjectionWithAxis(polygonB, axis)
-        if not ((leftA < leftB + b2a < rightA) or (leftA < rightB + b2a < rightA)):
-            return False
-    for axis in polygonB.shape.normals:
-        b2a = (polygonA.position - polygonB.position) % axis.rotate(polygonB.rotation)
-        leftA, rightA = getPolygonProjectionWithAxis(polygonA, axis)
-        leftB, rightB = getPolygonProjectionWithAxis(polygonB, axis)
-        if not ((leftA < leftB + b2a < rightA) or (leftA < rightB + b2a < rightA)):
-            return False
+    for polygon in (polygonA, polygonB):
+        for axis in polygon.shape.normals:
+            b2a = (polygonA.position - polygonB.position) % axis.rotate(polygonA.rotation)
+            leftA, rightA = getPolygonProjectionWithAxis(polygonA, axis)
+            leftB, rightB = getPolygonProjectionWithAxis(polygonB, axis)
+            if not ((leftA < leftB + b2a < rightA) or (leftA < rightB + b2a < rightA)):
+                return False
     return True
 
 
-def solveEdge(screen: tuple, rbody: Rigidbody):
+def solveEdge(screen: Tuple[float, float], rbody: Rigidbody) -> None:
     if type(rbody.shape) is Circle:
         solveEdgeCircle(screen, rbody)
     elif type(rbody.shape) is Polygon:
         solveEdgePolygon(screen, rbody)
 
 
-def solveEdgeCircle(screen: tuple, rbody: Rigidbody):
+def solveEdgeCircle(screen: Tuple[float, float], rbody: Rigidbody) -> None:
     if checkEdgeSide[0] and rbody.position.y - rbody.shape.radius <= 0.:
         rbody.position.y = rbody.shape.radius
         rbody.linearVelocity.y = -rbody.linearVelocity.y * EdgeElasticity
@@ -94,7 +83,7 @@ def solveEdgeCircle(screen: tuple, rbody: Rigidbody):
         rbody.linearVelocity.x = -rbody.linearVelocity.x * EdgeElasticity
 
 
-def solveEdgePolygon(screen: tuple, rbody: Rigidbody):
+def solveEdgePolygon(screen: Tuple[float, float], rbody: Rigidbody) -> None:
     if rbody.position.y + rbody.shape.radius < screen[1] and \
             rbody.position.y - rbody.shape.radius > 0. and \
             rbody.position.x - rbody.shape.radius > 0. and \
@@ -120,7 +109,7 @@ def solveEdgePolygon(screen: tuple, rbody: Rigidbody):
             rbody.angularVelocity = -rbody.angularVelocity * RotateElasticity
 
 
-def solve(rbodyA: Rigidbody, rbodyB: Rigidbody):
+def solve(rbodyA: Rigidbody, rbodyB: Rigidbody) -> None:
     if type(rbodyA.shape) is Circle:
         if type(rbodyB.shape) is Circle:
             solveCircleWithCircle(rbodyA, rbodyB)
@@ -137,7 +126,7 @@ def solve(rbodyA: Rigidbody, rbodyB: Rigidbody):
         trigger(rbodyB, rbodyA)
 
 
-def simpleImpact(rbodyA: Rigidbody, rbodyB: Rigidbody, direction: Vector):
+def simpleImpact(rbodyA: Rigidbody, rbodyB: Rigidbody, direction: Vector) -> None:
     ovdirA, keepA = rbodyA.linearVelocity.decomposeVertical(direction)
     ovdirB, keepB = rbodyB.linearVelocity.decomposeVertical(direction)
     vdirA = (ovdirA * (rbodyA.mass - rbodyB.mass) + ovdirB * 2. * rbodyB.mass) / (rbodyA.mass + rbodyB.mass)
@@ -146,7 +135,7 @@ def simpleImpact(rbodyA: Rigidbody, rbodyB: Rigidbody, direction: Vector):
     rbodyB.linearVelocity = keepB + vdirB * rbodyA.elasticity
 
 
-def moveAway(rbodyA: Rigidbody, rbodyB: Rigidbody):
+def moveAway(rbodyA: Rigidbody, rbodyB: Rigidbody) -> None:
     direction = rbodyA.position - rbodyB.position
     magnitude = (rbodyA.shape.radius + rbodyB.shape.radius - direction.magnitude()) / 4. + .01
     normalize = direction.normalize() * magnitude
@@ -154,7 +143,7 @@ def moveAway(rbodyA: Rigidbody, rbodyB: Rigidbody):
     rbodyB.position -= normalize
 
 
-def solveCircleWithCircle(circleA: Rigidbody, circleB: Rigidbody):
+def solveCircleWithCircle(circleA: Rigidbody, circleB: Rigidbody) -> None:
     direction = circleA.position - circleB.position
     if direction.magnitudeSqr() == 0.:
         return
@@ -162,7 +151,7 @@ def solveCircleWithCircle(circleA: Rigidbody, circleB: Rigidbody):
     moveAway(circleA, circleB)
 
 
-def getEdgeImpactDirection(rbody: Rigidbody, polygon: Rigidbody) -> (Vector, float):
+def getEdgeImpactDirection(rbody: Rigidbody, polygon: Rigidbody) -> Tuple[Vector, float]:
     originDirection = polygon.position - rbody.position
     minAngle = 2.
     minEdge = None
@@ -174,7 +163,7 @@ def getEdgeImpactDirection(rbody: Rigidbody, polygon: Rigidbody) -> (Vector, flo
     return minEdge, minAngle
 
 
-def solveCircleWithPolygon(circle: Rigidbody, polygon: Rigidbody):
+def solveCircleWithPolygon(circle: Rigidbody, polygon: Rigidbody) -> None:
     if DebugCircleWithPolygon:
         print(time.time())
         return
@@ -185,7 +174,7 @@ def solveCircleWithPolygon(circle: Rigidbody, polygon: Rigidbody):
     moveAway(circle, polygon)
 
 
-def solvePolygonWithPolygon(polygonA: Rigidbody, polygonB: Rigidbody):
+def solvePolygonWithPolygon(polygonA: Rigidbody, polygonB: Rigidbody) -> None:
     directionB, angleB = getEdgeImpactDirection(polygonA, polygonB)
     directionA, angleA = getEdgeImpactDirection(polygonB, polygonA)
     polygonA.angularVelocity += angleA * polygonB.mass / polygonA.mass
@@ -196,7 +185,7 @@ def solvePolygonWithPolygon(polygonA: Rigidbody, polygonB: Rigidbody):
     moveAway(polygonA, polygonB)
 
 
-def getPolygonProjectionWithAxis(polygon: Rigidbody, axis: Vector) -> (float, float):
+def getPolygonProjectionWithAxis(polygon: Rigidbody, axis: Vector) -> Tuple[float, float]:
     minD = 0.
     maxD = 0.
     for point in polygon.shape.points:

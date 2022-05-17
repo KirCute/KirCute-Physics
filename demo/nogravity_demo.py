@@ -4,12 +4,12 @@ from rigidbody import *
 from frame import GameFrame
 
 
-def generateRandomColor() -> tuple:
+def generateRandomColor() -> Tuple[int, int, int]:
     return random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)
 
 
 class FloatDemo(GameFrame):
-    def _update(self, events: list):
+    def _update(self, events: List[pygame.event.Event]) -> None:
         pygame.display.set_caption("KirCute-Physics Demo fps: %s, len: %s" % (self.getFPS(), len(self._world.objs)))
         for event in events:
             if event.type == pygame.MOUSEBUTTONDOWN:
